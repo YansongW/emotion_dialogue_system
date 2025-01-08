@@ -1,4 +1,5 @@
-"""
+【声明：项目代码均通过Cursor使用Claude3.5-sonnet-20240620生成】
+
 # 情感对话系统
 
 这是一个基于大语言模型的情感对话系统，能够进行自然的对话交互，并表现出适当的情感状态。
@@ -282,7 +283,7 @@ logging.config.dictConfig({
 2. 安装步骤
 ```
 1. 克隆代码仓库
-git clone [仓库地址]
+git clone https://github.com/YansongW/emotion_dialogue_system
 
 2. 安装依赖
 pip install -r requirements.txt
@@ -316,5 +317,5 @@ python server.py
 4. 提交代码和文档
 5. 发起合并请求
 ```
-"""
+
 # emotion_dialogue_system
