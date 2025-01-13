@@ -1,0 +1,26 @@
+2025-01-06 18:09:06,550 - [ERROR] - emotion_dialogue - logger.py:139 - _log - 分析上下文失败: 
+
+You tried to access openai.ChatCompletion, but this is no longer supported in openai>=1.0.0 - see the README at https://github.com/openai/openai-python for the API.
+
+You can run `openai migrate` to automatically upgrade your codebase to use the 1.0.0 interface. 
+
+Alternatively, you can pin your installation to the old version, e.g. `pip install openai==0.28`
+
+A detailed migration guide is available here: https://github.com/openai/openai-python/discussions/742
+ - Context: {"timestamp": "2025-01-06T18:09:06.550120", "type": "general", "module": "unknown", "details": {}}
+2025-01-06 18:09:06,552 - [ERROR] - emotion_dialogue - logger.py:139 - _log - 评估情绪失败: 
+
+You tried to access openai.ChatCompletion, but this is no longer supported in openai>=1.0.0 - see the README at https://github.com/openai/openai-python for the API.
+
+You can run `openai migrate` to automatically upgrade your codebase to use the 1.0.0 interface. 
+
+Alternatively, you can pin your installation to the old version, e.g. `pip install openai==0.28`
+
+A detailed migration guide is available here: https://github.com/openai/openai-python/discussions/742
+ - Context: {"timestamp": "2025-01-06T18:09:06.552147", "type": "general", "module": "unknown", "details": {}}
+2025-01-06 18:09:06,555 - [ERROR] - emotion_dialogue - logger.py:139 - _log - 处理对话请求失败: '\n    "话语"' - Context: {"timestamp": "2025-01-06T18:09:06.555143", "type": "general", "module": "unknown", "details": {}}
+2025-01-06 18:09:06,556 - [ERROR] - emotion_dialogue - logger.py:139 - _log - 对话生成失败: '\n    "话语"' - Context: {"timestamp": "2025-01-06T18:09:06.556125", "type": "general", "module": "unknown", "details": {}}
+2025-01-06 18:14:44,101 - [ERROR] - emotion_dialogue - logger.py:139 - _log - 分析上下文失败: 调用Ollama API失败: Ollama服务返回错误: 404 - Context: {"timestamp": "2025-01-06T18:14:44.101396", "type": "general", "module": "unknown", "details": {}}
+2025-01-06 18:14:44,108 - [ERROR] - emotion_dialogue - logger.py:139 - _log - 评估情绪失败: 调用Ollama API失败: Ollama服务返回错误: 404 - Context: {"timestamp": "2025-01-06T18:14:44.108095", "type": "general", "module": "unknown", "details": {}}
+2025-01-06 18:14:44,109 - [ERROR] - emotion_dialogue - logger.py:139 - _log - 生成响应失败: '\n    "话语"' - Context: {"timestamp": "2025-01-06T18:14:44.109188", "type": "general", "module": "unknown", "details": {}}
+2025-01-06 18:14:44,109 - [ERROR] - emotion_dialogue - logger.py:139 - _log - 对话生成失败: '\n    "话语"' - Context: {"timestamp": "2025-01-06T18:14:44.109725", "type": "general", "module": "unknown", "details": {}}

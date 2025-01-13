@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>系统配置</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 页面标题 -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">系统配置</h1>
+            <p class="mt-2 text-gray-600">在这里配置系统的各项参数</p>
+        </div>
+
+        <!-- 保存按钮 -->
+        <div class="fixed bottom-4 right-4 z-50 space-x-2">
+            <a href="/" class="bg-gray-500 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-gray-600 transition-colors">
+                返回对话
+            </a>
+            <button onclick="saveConfig()" 
+                class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-600 transition-colors">
+                保存配置
+            </button>
+        </div>
+
+        <!-- 配置区域 -->
+        <div class="space-y-8">
+            <!-- 基础配置部分 -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- 左侧列 -->
+                <div class="space-y-8">
+                    <!-- 模型配置 -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-bold mb-4">模型配置</h2>
+                        
+                        <!-- 当前生效的配置 -->
+                        <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">当前生效的配置</h3>
+                            <div class="space-y-2 text-sm text-gray-600">
+                                <div>模型类型: <span id="current_model_type" class="font-medium"></span></div>
+                                <div>模型名称: <span id="current_model_name" class="font-medium"></span></div>
+                                <div>Temperature: <span id="current_temperature" class="font-medium"></span></div>
+                                <div>Top-K: <span id="current_top_k" class="font-medium"></span></div>
+                                <div>Top-P: <span id="current_top_p" class="font-medium"></span></div>
+                                <div id="current_api_info" class="hidden">
+                                    API地址: <span id="current_api_base" class="font-medium"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- 模型类型选择 -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">模型类型</label>
+                                <select id="model_type" onchange="handleModelTypeChange()"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    <option value="ollama">Ollama</option>
+                                    <option value="openai">OpenAI</option>
+                                    <option value="other">其他</option>
+                                </select>
+                            </div>
+
+                            <!-- Ollama配置 -->
+                            <div id="ollama_fields">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">模型名称</label>
+                                    <select id="model_name" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                        <option value="">加载中...</option>
+                                    </select>
+                                </div>
+                                <div id="ollama_status" class="mt-2 text-sm text-gray-500">
+                                    检查Ollama安装状态...
+                                </div>
+                            </div>
+
+                            <!-- OpenAI配置 -->
+                            <div id="openai_fields" class="hidden">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">模型名称</label>
+                                    <select id="openai_model" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                        <option value="gpt-4">GPT-4</option>
+                                    </select>
+                                </div>
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700">API密钥</label>
+                                    <input type="password" id="api_key" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                </div>
+                            </div>
+
+                            <!-- 其他模型配置 -->
+                            <div id="other_fields" class="hidden">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700">API地址</label>
+                                    <input type="text" id="api_base" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                </div>
+                                <div class="mt-4">
+                                    <label class="block text-sm font-medium text-gray-700">模型名称</label>
+                                    <input type="text" id="other_model_name" 
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                </div>
+                            </div>
+
+                            <!-- 通用模型参数 -->
+                            <div class="pt-4 border-t border-gray-200">
+                                <h3 class="text-lg font-medium text-gray-900 mb-4">模型参数</h3>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Temperature</label>
+                                        <input type="range" id="temperature" min="0" max="1" step="0.1" 
+                                            class="mt-1 block w-full" oninput="this.nextElementSibling.value = this.value">
+                                        <output>0.7</output>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Top-K</label>
+                                        <input type="number" id="top_k" 
+                                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700">Top-P</label>
+                                        <input type="range" id="top_p" min="0" max="1" step="0.1"
+                                            class="mt-1 block w-full" oninput="this.nextElementSibling.value = this.value">
+                                        <output>0.9</output>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 情绪配置 -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-bold mb-4">情绪配置</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">默认情绪</label>
+                                <select id="default_emotion" 
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">语速范围</label>
+                                <div class="flex space-x-4">
+                                    <input type="number" id="speech_speed_min" step="0.1"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" 
+                                        placeholder="最小值">
+                                    <input type="number" id="speech_speed_max" step="0.1"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" 
+                                        placeholder="最大值">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">音量范围</label>
+                                <div class="flex space-x-4">
+                                    <input type="number" id="volume_min" step="0.1"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" 
+                                        placeholder="最小值">
+                                    <input type="number" id="volume_max" step="0.1"
+                                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm" 
+                                        placeholder="最大值">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 右侧列 -->
+                <div class="space-y-8">
+                    <!-- 安全配置 -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-bold mb-4">安全配置</h2>
+                        <div class="space-y-4">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="enable_safety_check"
+                                    class="rounded border-gray-300 text-blue-600 shadow-sm">
+                                <label class="ml-2 text-sm font-medium text-gray-700">启用安全检查</label>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">最小障碍物距离(米)</label>
+                                <input type="number" id="min_obstacle_distance" step="0.1"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">危险关键词</label>
+                                <input type="text" id="danger_keywords"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                                    placeholder="用逗号分隔">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 词汇配置 -->
+                    <div class="bg-white rounded-lg shadow-lg p-6 flex-grow">
+                        <h2 class="text-xl font-bold mb-4">词汇配置</h2>
+                        <div class="space-y-6 h-full">
+                            <!-- 情绪词汇 -->
+                            <div class="flex-grow">
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">情绪词汇</h3>
+                                <div class="overflow-x-auto flex-grow" style="min-height: 200px;">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    情绪类型
+                                                </th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    词汇列表
+                                                </th>
+                                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    操作
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="emotions_table" class="bg-white divide-y divide-gray-200">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button onclick="addEmotionRow()" 
+                                    class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                    添加情绪
+                                </button>
+                            </div>
+
+                            <!-- 动作词汇 -->
+                            <div class="flex-grow">
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">动作词汇</h3>
+                                <div id="actions_container" class="mb-2 min-h-[100px]"></div>
+                                <div class="flex space-x-2">
+                                    <input type="text" id="new_action" 
+                                        class="flex-1 rounded-md border-gray-300 shadow-sm"
+                                        placeholder="输入新动作">
+                                    <button onclick="addAction()" 
+                                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                        添加
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 响应词汇 -->
+                            <div class="flex-grow">
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">响应词汇</h3>
+                                <div class="overflow-x-auto flex-grow" style="min-height: 200px;">
+                                    <table class="min-w-full divide-y divide-gray-200">
+                                        <thead class="bg-gray-50">
+                                            <tr>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    响应类型
+                                                </th>
+                                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    词汇列表
+                                                </th>
+                                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    操作
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="responses_table" class="bg-white divide-y divide-gray-200">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button onclick="addResponseRow()" 
+                                    class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                                    添加响应类型
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prompt配置 -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">Prompt配置</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- 左侧：编辑区域 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">系统Prompt</label>
+                            <textarea id="system_prompt" rows="5"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm font-mono"
+                                placeholder="输入系统Prompt..."></textarea>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">用户Prompt模板</label>
+                            <textarea id="user_prompt_template" rows="35"
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm font-mono"
+                                placeholder="输入用户Prompt模板..."></textarea>
+                            <p class="mt-1 text-sm text-gray-500">
+                                可用变量：<br>
+                                {user_input} - 用户输入<br>
+                                {emotion_type} - 当前情绪<br>
+                                {context_type} - 对话类型<br>
+                                {emotions} - 情绪词汇<br>
+                                {actions} - 动作词汇<br>
+                                {responses} - 响应词汇
+                            </p>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-2">
+                            <button onclick="previewPrompt()" 
+                                class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                                预览
+                            </button>
+                            <button onclick="resetPrompt()" 
+                                class="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600">
+                                重置为默认
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 右侧：预览区域 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">当前生效的Prompt</label>
+                            <div class="mt-1 p-4 bg-gray-100 rounded-lg">
+                                <pre id="current_prompt" class="whitespace-pre-wrap break-words font-mono"></pre>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">完整Prompt预览</label>
+                            <div class="mt-1 p-4 bg-gray-100 rounded-lg">
+                                <pre id="prompt_preview" class="whitespace-pre-wrap break-words font-mono"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化toastr
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+        }
+        
+        // 处理模型类型变更
+        async function handleModelTypeChange() {
+            const modelType = document.getElementById('model_type').value;
+            
+            // 隐藏所有配置区域
+            document.getElementById('ollama_fields').classList.add('hidden');
+            document.getElementById('openai_fields').classList.add('hidden');
+            document.getElementById('other_fields').classList.add('hidden');
+            
+            // 显示对应的配置区域
+            if (modelType === 'ollama') {
+                document.getElementById('ollama_fields').classList.remove('hidden');
+                await checkOllama();
+            } else if (modelType === 'openai') {
+                document.getElementById('openai_fields').classList.remove('hidden');
+            } else if (modelType === 'other') {
+                document.getElementById('other_fields').classList.remove('hidden');
+            }
+        }
+        
+        // 检查Ollama安装状态
+        async function checkOllama() {
+            const statusDiv = document.getElementById('ollama_status');
+            const modelSelect = document.getElementById('model_name');
+            const currentValue = modelSelect.value; // 保存当前选中的值
+            
+            statusDiv.textContent = '正在检查Ollama状态...';
+            statusDiv.className = 'mt-2 text-sm text-gray-500';
+            
+            try {
+                // 设置5秒超时
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch('/api/models/ollama', {
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success && Array.isArray(result.models) && result.models.length > 0) {
+                    statusDiv.textContent = 'Ollama已安装，可用模型：' + result.models.length + '个';
+                    statusDiv.className = 'mt-2 text-sm text-green-500';
+                    
+                    // 更新模型列表
+                    modelSelect.innerHTML = result.models.map(model => 
+                        `<option value="${model}">${model}</option>`
+                    ).join('');
+                    
+                    // 如果之前有选中的值，尝试恢复
+                    if (currentValue && result.models.includes(currentValue)) {
+                        modelSelect.value = currentValue;
+                    }
+                    
+                } else if (result.success && Array.isArray(result.models) && result.models.length === 0) {
+                    statusDiv.textContent = 'Ollama已安装，但没有可用模型，请先拉取模型';
+                    statusDiv.className = 'mt-2 text-sm text-yellow-500';
+                    modelSelect.innerHTML = '<option value="">请先拉取模型</option>';
+                    
+                } else {
+                    statusDiv.textContent = result.error || '检查Ollama失败';
+                    statusDiv.className = 'mt-2 text-sm text-red-500';
+                    modelSelect.innerHTML = '<option value="">请先安装Ollama</option>';
+                }
+                
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    statusDiv.textContent = '检查Ollama超时，请确认服务是否正常运行';
+                } else {
+                    statusDiv.textContent = '检查Ollama失败: ' + error.message;
+                }
+                statusDiv.className = 'mt-2 text-sm text-red-500';
+                modelSelect.innerHTML = '<option value="">检查失败</option>';
+            }
+        }
+        
+        // 验证OpenAI API密钥
+        async function verifyOpenAIKey() {
+            const apiKey = document.getElementById('api_key').value;
+            
+            try {
+                const response = await fetch(`/api/models/openai?api_key=${apiKey}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastr.success('API密钥有效');
+                } else {
+                    toastr.error('API密钥无效: ' + result.error);
+                }
+                
+            } catch (error) {
+                toastr.error('验证API密钥失败: ' + error.message);
+            }
+        }
+        
+        // 添加情绪行
+        function addEmotionRow() {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
+            tr.innerHTML = `
+                <td class="px-4 py-2 whitespace-nowrap">
+                    <input type="text" class="rounded-md border-gray-300 shadow-sm emotion-type w-full"
+                        placeholder="情绪类型">
+                </td>
+                <td class="px-4 py-2">
+                    <input type="text" class="w-full rounded-md border-gray-300 shadow-sm emotion-words"
+                        placeholder="用逗号分隔词汇">
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-center">
+                    <button onclick="this.closest('tr').remove()"
+                        class="text-red-600 hover:text-red-900">删除</button>
+                </td>
+            `;
+            document.getElementById('emotions_table').appendChild(tr);
+        }
+        
+        // 添加动作
+        function addAction() {
+            const input = document.getElementById('new_action');
+            const action = input.value.trim();
+            if (!action) return;
+
+            const span = document.createElement('span');
+            span.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2 mb-2';
+            span.innerHTML = `
+                ${action}
+                <button type="button" class="ml-1 text-blue-400 hover:text-blue-600"
+                    onclick="this.parentElement.remove()">×</button>
+            `;
+            document.getElementById('actions_container').appendChild(span);
+            input.value = '';
+        }
+        
+        // 添加响应行
+        function addResponseRow() {
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
+            tr.innerHTML = `
+                <td class="px-4 py-2 whitespace-nowrap">
+                    <input type="text" class="rounded-md border-gray-300 shadow-sm response-type w-full"
+                        placeholder="响应类型">
+                </td>
+                <td class="px-4 py-2">
+                    <input type="text" class="w-full rounded-md border-gray-300 shadow-sm response-words"
+                        placeholder="用逗号分隔词汇">
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-center">
+                    <button onclick="this.closest('tr').remove()"
+                        class="text-red-600 hover:text-red-900">删除</button>
+                </td>
+            `;
+            document.getElementById('responses_table').appendChild(tr);
+        }
+        
+        // 收集词汇配置
+        function collectVocabularyConfig() {
+            // 收集情绪词汇
+            const emotions = {};
+            document.querySelectorAll('#emotions_table tr').forEach(tr => {
+                const type = tr.querySelector('.emotion-type').value.trim();
+                const words = tr.querySelector('.emotion-words').value.trim();
+                if (type && words) {
+                    emotions[type] = words.split(',').map(w => w.trim());
+                }
+            });
+            
+            // 收集动作词汇
+            const actions = Array.from(
+                document.querySelectorAll('#actions_container span')
+            ).map(span => span.textContent.trim());
+            
+            // 收集响应词汇
+            const responses = {};
+            document.querySelectorAll('#responses_table tr').forEach(tr => {
+                const type = tr.querySelector('.response-type').value.trim();
+                const words = tr.querySelector('.response-words').value.trim();
+                if (type && words) {
+                    responses[type] = words.split(',').map(w => w.trim());
+                }
+            });
+            
+            return {
+                emotions,
+                actions,
+                responses
+            };
+        }
+        
+        // 加载配置
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const config = await response.json();
+                
+                // 更新模型配置
+                document.getElementById('model_type').value = config.model.model_type;
+                document.getElementById('temperature').value = config.model.temperature;
+                document.getElementById('temperature').nextElementSibling.value = config.model.temperature;
+                document.getElementById('top_k').value = config.model.top_k;
+                document.getElementById('top_p').value = config.model.top_p;
+                document.getElementById('top_p').nextElementSibling.value = config.model.top_p;
+                
+                // 根据模型类型显示对应的配置项
+                await handleModelTypeChange();
+                
+                if (config.model.model_type === 'ollama') {
+                    // 先设置模型名称，然后检查状态
+                    const modelName = config.model.model_name;
+                    const modelSelect = document.getElementById('model_name');
+                    if (modelSelect.querySelector(`option[value="${modelName}"]`)) {
+                        modelSelect.value = modelName;
+                    }
+                    await checkOllama();
+                } else if (config.model.model_type === 'openai') {
+                    document.getElementById('openai_model').value = config.model.model_name;
+                    document.getElementById('api_key').value = config.model.api_key || '';
+                } else if (config.model.model_type === 'other') {
+                    document.getElementById('other_model_name').value = config.model.model_name;
+                    document.getElementById('api_base').value = config.model.api_base || '';
+                }
+                
+                // 更新情绪配置
+                document.getElementById('speech_speed_min').value = config.emotion.speech_speed_range[0];
+                document.getElementById('speech_speed_max').value = config.emotion.speech_speed_range[1];
+                document.getElementById('volume_min').value = config.emotion.volume_range[0];
+                document.getElementById('volume_max').value = config.emotion.volume_range[1];
+                
+                // 更新安全配置
+                document.getElementById('enable_safety_check').checked = config.safety.enable_safety_check;
+                document.getElementById('min_obstacle_distance').value = config.safety.min_obstacle_distance;
+                document.getElementById('danger_keywords').value = config.safety.danger_keywords.join(',');
+                
+                // 更新词汇配置
+                // 清空现有词汇
+                document.getElementById('emotions_table').innerHTML = '';
+                document.getElementById('actions_container').innerHTML = '';
+                document.getElementById('responses_table').innerHTML = '';
+                
+                // 添加情绪词汇
+                Object.entries(config.vocabulary.emotions).forEach(([emotion, words]) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50';
+                    tr.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <input type="text" class="rounded-md border-gray-300 shadow-sm emotion-type w-full"
+                                value="${emotion}">
+                        </td>
+                        <td class="px-4 py-2">
+                            <input type="text" class="w-full rounded-md border-gray-300 shadow-sm emotion-words"
+                                value="${words.join(',')}">
+                        </td>
+                        <td class="px-4 py-2 whitespace-nowrap text-center">
+                            <button onclick="this.closest('tr').remove()"
+                                class="text-red-600 hover:text-red-900">删除</button>
+                        </td>
+                    `;
+                    document.getElementById('emotions_table').appendChild(tr);
+                });
+                
+                // 添加动作词汇
+                config.vocabulary.actions.forEach(action => {
+                    const span = document.createElement('span');
+                    span.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2 mb-2';
+                    span.innerHTML = `
+                        ${action}
+                        <button type="button" class="ml-1 text-blue-400 hover:text-blue-600"
+                            onclick="this.parentElement.remove()">×</button>
+                    `;
+                    document.getElementById('actions_container').appendChild(span);
+                });
+                
+                // 添加响应词汇
+                Object.entries(config.vocabulary.responses).forEach(([type, words]) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-gray-50';
+                    tr.innerHTML = `
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <input type="text" class="rounded-md border-gray-300 shadow-sm response-type w-full"
+                                value="${type}">
+                        </td>
+                        <td class="px-4 py-2">
+                            <input type="text" class="w-full rounded-md border-gray-300 shadow-sm response-words"
+                                value="${words.join(',')}">
+                        </td>
+                        <td class="px-4 py-2 whitespace-nowrap text-center">
+                            <button onclick="this.closest('tr').remove()"
+                                class="text-red-600 hover:text-red-900">删除</button>
+                        </td>
+                    `;
+                    document.getElementById('responses_table').appendChild(tr);
+                });
+                
+                // 更新情绪选择器选项
+                const defaultEmotionSelect = document.getElementById('default_emotion');
+                defaultEmotionSelect.innerHTML = Object.keys(config.vocabulary.emotions)
+                    .map(emotion => `<option value="${emotion}">${emotion}</option>`)
+                    .join('');
+                defaultEmotionSelect.value = config.emotion.default_emotion;
+                
+                // 加载 prompt 配置
+                document.getElementById('system_prompt').value = config.system_prompt || '';
+                document.getElementById('user_prompt_template').value = config.user_prompt_template || '';
+                document.getElementById('current_prompt').textContent = config.system_prompt || '';
+                
+                // 预览 prompt
+                previewPrompt();
+                
+                // 更新当前生效的配置显示
+                updateCurrentConfig(config);
+                
+            } catch (error) {
+                console.error('加载配置失败:', error);
+                toastr.error('加载配置失败: ' + error.message);
+            }
+        }
+        
+        // 更新当前生效的配置显示
+        function updateCurrentConfig(config) {
+            // 更新模型配置显示
+            document.getElementById('current_model_type').textContent = config.model.model_type;
+            document.getElementById('current_model_name').textContent = config.model.model_name;
+            document.getElementById('current_temperature').textContent = config.model.temperature;
+            document.getElementById('current_top_k').textContent = config.model.top_k;
+            document.getElementById('current_top_p').textContent = config.model.top_p;
+            
+            // 更新API信息显示
+            const apiInfo = document.getElementById('current_api_info');
+            if (config.model.model_type === 'other' && config.model.api_base) {
+                apiInfo.classList.remove('hidden');
+                document.getElementById('current_api_base').textContent = config.model.api_base;
+            } else {
+                apiInfo.classList.add('hidden');
+            }
+            
+            // 更新Prompt显示
+            document.getElementById('current_prompt').textContent = config.system_prompt || '';
+        }
+        
+        // 保存配置
+        async function saveConfig() {
+            try {
+                const modelType = document.getElementById('model_type').value;
+                
+                // 构建配置对象
+                const config = {
+                    model: {
+                        model_type: modelType,
+                        temperature: parseFloat(document.getElementById('temperature').value),
+                        top_k: parseInt(document.getElementById('top_k').value),
+                        top_p: parseFloat(document.getElementById('top_p').value)
+                    },
+                    emotion: {
+                        default_emotion: document.getElementById('default_emotion').value,
+                        speech_speed_range: [
+                            parseFloat(document.getElementById('speech_speed_min').value),
+                            parseFloat(document.getElementById('speech_speed_max').value)
+                        ],
+                        volume_range: [
+                            parseFloat(document.getElementById('volume_min').value),
+                            parseFloat(document.getElementById('volume_max').value)
+                        ]
+                    },
+                    safety: {
+                        enable_safety_check: document.getElementById('enable_safety_check').checked,
+                        min_obstacle_distance: parseFloat(document.getElementById('min_obstacle_distance').value),
+                        danger_keywords: document.getElementById('danger_keywords').value.split(',').map(k => k.trim())
+                    },
+                    vocabulary: collectVocabularyConfig(),
+                    system_prompt: document.getElementById('system_prompt').value,
+                    user_prompt_template: document.getElementById('user_prompt_template').value
+                };
+                
+                // 根据模型类型添加特定配置
+                if (modelType === 'ollama') {
+                    config.model.model_name = document.getElementById('model_name').value;
+                } else if (modelType === 'openai') {
+                    config.model.model_name = document.getElementById('openai_model').value;
+                    config.model.api_key = document.getElementById('api_key').value;
+                } else if (modelType === 'other') {
+                    config.model.model_name = document.getElementById('other_model_name').value;
+                    config.model.api_base = document.getElementById('api_base').value;
+                }
+                
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    toastr.success('配置已保存');
+                    // 保存成功后立即刷新页面
+                    window.location.reload();
+                } else {
+                    toastr.error('保存失败: ' + result.errors.join('\n'));
+                }
+                
+            } catch (error) {
+                toastr.error('保存配置失败: ' + error.message);
+            }
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await loadConfig();
+                // 如果当前是 Ollama 模型，检查状态
+                if (document.getElementById('model_type').value === 'ollama') {
+                    await checkOllama();
+                }
+                // 如果没有已保存的配置,使用默认值
+                if (!document.getElementById('system_prompt').value) {
+                    resetPrompt();
+                }
+            } catch (error) {
+                console.error('初始化失败:', error);
+                toastr.error('初始化失败: ' + error.message);
+            }
+        });
+        
+        // 预览Prompt
+        function previewPrompt() {
+            const systemPrompt = document.getElementById('system_prompt').value;
+            const userTemplate = document.getElementById('user_prompt_template').value;
+            
+            // 使用示例值替换变量
+            const preview = userTemplate
+                .replace('{user_input}', '你好')
+                .replace('{emotion_type}', '高兴')
+                .replace('{context_type}', '问候')
+                .replace('{emotions}', '开心, 快乐, 兴奋, 喜悦')
+                .replace('{actions}', '向左转, 点头, 摇头')
+                .replace('{responses}', '你好, 早上好, 下午好, 晚上好');
+            
+            document.getElementById('prompt_preview').textContent = 
+                `系统Prompt:\n${systemPrompt}\n\n用户Prompt:\n${preview}`;
+        }
+        
+        // 重置为默认Prompt
+        function resetPrompt() {
+            const defaultSystemPrompt = `你是一个情感丰富的对话机器人。在对话中,你需要:
+1. 只使用指定的词汇表达
+2. 表现出适当的情绪
+3. 保持对话的自然性和连贯性
+4. 回答要简短精炼`;
+
+            const defaultUserPrompt = `用户输入: {user_input}
+
+当前情绪: {emotion_type}
+
+对话类型: {context_type}
+
+可用词汇:
+1. 情绪词汇: {emotions}
+2. 动作词汇: {actions}
+3. 响应词汇: {responses}
+
+要求:
+1. 必须使用以下JSON格式输出:
+{
+    "话语": "从响应词汇中选择",
+    "表情": "从当前情绪词汇中选择",
+    "程度": "0-10之间的数字",
+    "动作": "从动作词汇中选择"
+}
+
+2. 格式要求:
+- 话语必须从响应词汇列表中选择
+- 表情必须从当前情绪的词汇中选择
+- 程度必须是0到10之间的数字
+- 动作必须从动作词汇列表中选择
+
+3. 其他要求:
+- 回答要简短,不超过20个字
+- 保持对话的自然性
+- 严格按照JSON格式输出
+- 不要添加任何额外说明
+
+请生成回答:`;
+            
+            document.getElementById('system_prompt').value = defaultSystemPrompt;
+            document.getElementById('user_prompt_template').value = defaultUserPrompt;
+            previewPrompt();
+        }
+    </script>
+</body>
+</html> 

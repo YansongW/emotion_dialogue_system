@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>对话系统</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto px-4 py-8">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold">对话系统</h1>
+            <div class="space-x-4">
+                <button onclick="showLogs()" 
+                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    系统日志
+                </button>
+                <a href="/settings" class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                    系统配置
+                </a>
+            </div>
+        </div>
+        
+        <!-- 对话区域 -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+            <div id="chat_messages" class="space-y-4 h-96 overflow-y-auto mb-4">
+                <!-- 消息将在这里动态添加 -->
+            </div>
+            
+            <div class="flex space-x-2">
+                <input type="text" id="user_input" 
+                    class="flex-1 rounded-lg border-gray-300 shadow-sm"
+                    placeholder="请输入消息..."
+                    onkeypress="if(event.keyCode==13) sendMessage()">
+                <button onclick="sendMessage()" 
+                    class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    发送
+                </button>
+            </div>
+        </div>
+        
+        <!-- 状态面板 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 情绪状态 -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">情绪状态</h2>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-gray-600">当前情绪:</span>
+                        <span id="current_emotion" class="ml-2 font-bold">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">语速:</span>
+                        <span id="speech_speed" class="ml-2">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">音量:</span>
+                        <span id="volume" class="ml-2">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">音高:</span>
+                        <span id="pitch" class="ml-2">未检测</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 场景状态 -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">场景状态</h2>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-gray-600">障碍物:</span>
+                        <span id="obstacles" class="ml-2">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">温度:</span>
+                        <span id="temperature" class="ml-2">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">光照:</span>
+                        <span id="lighting" class="ml-2">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">安全状态:</span>
+                        <span id="safety_status" class="ml-2">未检测</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 系统状态 -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4">系统状态</h2>
+                <div class="space-y-2">
+                    <div>
+                        <span class="text-gray-600">模型类型:</span>
+                        <span id="model_type" class="ml-2">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">模型名称:</span>
+                        <span id="model_name" class="ml-2">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">响应时间:</span>
+                        <span id="response_time" class="ml-2">未检测</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-600">状态:</span>
+                        <span id="system_status" class="ml-2">未检测</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 日志模态框 -->
+    <div id="log_modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden">
+        <div class="relative w-full max-w-4xl mx-auto mt-20">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">系统日志</h2>
+                    <button onclick="hideLogs()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                <div id="log_content" class="h-96 overflow-y-auto font-mono text-sm whitespace-pre-wrap"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 消息模板 -->
+    <template id="message_template">
+        <div class="message flex space-x-2">
+            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                <span class="avatar text-gray-600"></span>
+            </div>
+            <div class="flex-1">
+                <div class="text-sm text-gray-500 name"></div>
+                <div class="bg-gray-100 rounded-lg p-3 mt-1 text-content"></div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // 初始化toastr
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+        }
+        
+        // 全局变量
+        let lastMessageTime = 0;
+        let isProcessing = false;
+        
+        // 定时刷新系统状态
+        let statusUpdateInterval;
+        
+        // 显示日志
+        async function showLogs() {
+            try {
+                const response = await fetch('/api/logs');
+                const data = await response.json();
+                
+                document.getElementById('log_content').textContent = data.logs.join('');
+                document.getElementById('log_modal').classList.remove('hidden');
+                
+                // 滚动到底部
+                const logContent = document.getElementById('log_content');
+                logContent.scrollTop = logContent.scrollHeight;
+                
+            } catch (error) {
+                toastr.error('获取日志失败: ' + error.message);
+            }
+        }
+        
+        // 隐藏日志
+        function hideLogs() {
+            document.getElementById('log_modal').classList.add('hidden');
+        }
+        
+        // 加载系统状态
+        async function loadSystemStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+                
+                // 更新情绪状态
+                document.getElementById('current_emotion').textContent = status.emotion.type || '未检测';
+                document.getElementById('speech_speed').textContent = status.emotion.speech_speed || '未检测';
+                document.getElementById('volume').textContent = status.emotion.volume || '未检测';
+                document.getElementById('pitch').textContent = status.emotion.pitch || '未检测';
+                
+                // 更新场景状态
+                document.getElementById('obstacles').textContent = status.scene.obstacles || '未检测';
+                document.getElementById('temperature').textContent = status.scene.temperature || '未检测';
+                document.getElementById('lighting').textContent = status.scene.lighting || '未检测';
+                document.getElementById('safety_status').textContent = status.scene.safety || '未检测';
+                
+                // 更新系统状态
+                document.getElementById('model_type').textContent = status.system.model_type || '未检测';
+                document.getElementById('model_name').textContent = status.system.model_name || '未检测';
+                document.getElementById('response_time').textContent = 
+                    status.system.last_response_time ? 
+                    (Date.now() - status.system.last_response_time) + 'ms' : 
+                    '未检测';
+                document.getElementById('system_status').textContent = status.system.status || '未检测';
+                
+            } catch (error) {
+                console.error('加载系统状态失败:', error);
+                // 将所有状态设置为未检测
+                document.querySelectorAll('[id$="_emotion"],[id$="_speed"],[id$="_volume"],[id$="_pitch"],[id$="_type"],[id$="_name"],[id$="_time"],[id$="_status"]')
+                    .forEach(el => el.textContent = '未检测');
+            }
+        }
+        
+        // 添加消息到对话区域
+        function addMessage(message) {
+            const template = document.getElementById('message_template');
+            const messageElement = template.content.cloneNode(true);
+            
+            const avatar = messageElement.querySelector('.avatar');
+            const name = messageElement.querySelector('.name');
+            const content = messageElement.querySelector('.text-content');
+            const messageDiv = messageElement.querySelector('.message');
+            
+            if (message.role === 'user') {
+                avatar.textContent = '用';
+                name.textContent = '用户';
+                messageDiv.classList.add('justify-end');
+                content.classList.add('bg-blue-100');
+            } else {
+                avatar.textContent = '机';
+                name.textContent = '机器人';
+                content.classList.add('bg-gray-100');
+            }
+            
+            content.textContent = message.content;
+            
+            const chatMessages = document.getElementById('chat_messages');
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // 发送消息
+        async function sendMessage() {
+            if (isProcessing) return;
+            
+            const input = document.getElementById('user_input');
+            const message = input.value.trim();
+            if (!message) return;
+            
+            try {
+                isProcessing = true;
+                document.getElementById('system_status').textContent = '处理中...';
+                
+                // 添加用户消息
+                addMessage({
+                    role: 'user',
+                    content: message
+                });
+                
+                // 清空输入框
+                input.value = '';
+                
+                // 发送请求
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        timestamp: Date.now()
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 添加机器人回复
+                    addMessage({
+                        role: 'assistant',
+                        content: result.response.text
+                    });
+                    
+                    // 更新系统状态
+                    await loadSystemStatus();
+                    
+                } else {
+                    toastr.error('处理失败: ' + result.error);
+                }
+                
+            } catch (error) {
+                toastr.error('发送消息失败: ' + error.message);
+                
+            } finally {
+                isProcessing = false;
+                await loadSystemStatus();
+            }
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载初始系统状态
+            loadSystemStatus();
+            
+            // 每5秒更新一次状态
+            setInterval(loadSystemStatus, 5000);
+            
+            // 聚焦到输入框
+            document.getElementById('user_input').focus();
+        });
+    </script>
+</body>
+</html> 
